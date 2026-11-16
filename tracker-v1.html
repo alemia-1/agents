@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Учебные задачи</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 40px 16px;
+      font: 16px/1.5 system-ui, sans-serif;
+      color: #202640;
+      background: #f2f4fa;
+    }
+    main {
+      max-width: 760px;
+      margin: auto;
+      padding: 32px;
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 12px 48px #2026400d;
+    }
+    h1 { margin: 0; font-size: clamp(26px, 5vw, 36px); }
+    .subtitle { margin: 6px 0 26px; color: #646b80; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .stat { padding: 16px; border-radius: 14px; background: #f5f6fc; }
+    .stat strong { display: block; font-size: 25px; color: #5142c5; }
+    .stat span { font-size: 13px; color: #646b80; }
+    progress {
+      display: block;
+      width: 100%;
+      height: 10px;
+      margin: 18px 0 6px;
+      border: 0;
+      border-radius: 10px;
+      overflow: hidden;
+      accent-color: #6654d9;
+      background: #eceef6;
+    }
+    progress::-webkit-progress-bar { background: #eceef6; }
+    progress::-webkit-progress-value { background: #6654d9; }
+    progress::-moz-progress-bar { background: #6654d9; }
+    #progressText { margin: 0 0 26px; font-size: 14px; color: #646b80; }
+    form {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 110px auto;
+      gap: 10px;
+      align-items: end;
+    }
+    label.field { display: grid; gap: 6px; font-size: 14px; font-weight: 600; }
+    input, button { font: inherit; }
+    input[type="text"], input[type="number"] {
+      width: 100%;
+      min-width: 0;
+      height: 46px;
+      padding: 10px 12px;
+      border: 1px solid #cdd1df;
+      border-radius: 10px;
+      background: white;
+      color: inherit;
+    }
+    button {
+      min-height: 44px;
+      padding: 9px 15px;
+      border: 0;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    button, input { -webkit-tap-highlight-color: transparent; }
+    :focus-visible { outline: 3px solid #9b8ef0; outline-offset: 3px; }
+    .add { height: 46px; background: #5947cb; color: white; font-weight: 600; }
+    .add:hover { background: #4937b5; }
+    .filters { display: flex; gap: 8px; margin: 26px 0 16px; flex-wrap: wrap; }
+    .filters button { background: #f2f3f8; color: #535b72; }
+    .filters button[aria-pressed="true"] { background: #e9e5ff; color: #4936b4; }
+    ul { list-style: none; padding: 0; margin: 0; }
+    .task {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 0;
+      border-bottom: 1px solid #eceef5;
+    }
+    .task-label {
+      display: flex;
+      flex: 1;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+      min-height: 44px;
+      cursor: pointer;
+    }
+    .task input { width: 22px; height: 22px; flex-shrink: 0; accent-color: #5947cb; }
+    .task-info { min-width: 0; }
+    .task-title { display: block; font-weight: 600; overflow-wrap: anywhere; }
+    .task-meta { display: block; font-size: 13px; color: #646b80; }
+    .done .task-title { text-decoration: line-through; color: #777e90; }
+    .delete { flex-shrink: 0; background: #fff0f0; color: #a52d40; font-size: 14px; }
+    .delete:hover { background: #ffe0e3; }
+    #empty { text-align: center; padding: 28px 12px; color: #646b80; }
+    footer { margin-top: 24px; color: #646b80; font-size: 12px; }
+    .sr-only {
+      position: absolute; width: 1px; height: 1px;
+      padding: 0; margin: -1px; overflow: hidden;
+      clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+    }
+    @media (max-width: 540px) {
+      body { padding: 16px 10px; }
+      main { padding: 22px 16px; border-radius: 18px; }
+      form { grid-template-columns: minmax(0, 1fr) 90px; }
+      .add { grid-column: 1 / -1; }
+      .stats { gap: 6px; }
+      .stat { padding: 12px 8px; }
+      .stat strong { font-size: 22px; }
+      .task { gap: 8px; }
+      .task-label { gap: 10px; }
+      .delete { padding: 9px 10px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Учебные задачи</h1>
+      <p class="subtitle">Маленькие шаги — заметный прогресс.</p>
+    </header>
+
+    <section aria-label="Общая статистика">
+      <div class="stats">
+        <div class="stat"><strong id="totalHours">0 ч</strong><span>Всего часов</span></div>
+        <div class="stat"><strong id="doneHours">0 ч</strong><span>Готово часов</span></div>
+        <div class="stat"><strong id="percent">0%</strong><span>Задач выполнено</span></div>
+      </div>
+      <progress id="progress" max="100" value="0" aria-label="Доля выполненных задач"></progress>
+      <p id="progressText"></p>
+    </section>
+
+    <form id="taskForm">
+      <label class="field">
+        Название задачи
+        <input id="title" type="text" placeholder="Например, разобрать конспект"
+               maxlength="150" required>
+      </label>
+      <label class="field">
+        Часы
+        <input id="hours" type="number" min="0.1" max="10000"
+               step="0.1" value="1" required>
+      </label>
+      <button class="add" type="submit">+ Добавить</button>
+    </form>
+
+    <nav class="filters" aria-label="Фильтр задач">
+      <button type="button" data-filter="all" aria-pressed="true">Все</button>
+      <button type="button" data-filter="active" aria-pressed="false">Активные</button>
+      <button type="button" data-filter="done" aria-pressed="false">Готовые</button>
+    </nav>
+
+    <ul id="taskList" aria-label="Учебные задачи"></ul>
+    <p id="empty" hidden></p>
+    <p id="announcement" class="sr-only" role="status" aria-live="polite"></p>
+    <footer id="storageNote">Задачи сохраняются в этом браузере. Статистика учитывает все задачи.</footer>
+  </main>
+
+  <script>
+    "use strict";
+
+    const storageKey = "study-task-tracker-v1";
+    const defaults = [
+      { id: "example-1", title: "Чтение", hours: 2, done: true },
+      { id: "example-2", title: "Практика", hours: 4, done: false },
+      { id: "example-3", title: "Повторение", hours: 2, done: false }
+    ];
+    const $ = id => document.getElementById(id);
+    const format = value => new Intl.NumberFormat("ru-RU", {
+      maximumFractionDigits: 1
+    }).format(value);
+
+    let tasks = defaults.map(task => ({ ...task }));
+    let filter = "all";
+    let storageAvailable = true;
+
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved !== null) {
+        const parsed = JSON.parse(saved);
+        if (!Array.isArray(parsed) || !parsed.every(task =>
+          task && typeof task.id === "string" &&
+          typeof task.title === "string" && task.title.trim().length > 0 &&
+          typeof task.hours === "number" && Number.isFinite(task.hours) &&
+          task.hours > 0 && task.hours <= 10000 &&
+          typeof task.done === "boolean"
+        ) || new Set(parsed.map(task => task.id)).size !== parsed.length) {
+          throw new Error("Invalid saved data");
+        }
+        tasks = parsed;
+      }
+    } catch {
+      storageAvailable = false;
+    }
+
+    function updateStorageNote() {
+      $("storageNote").textContent = storageAvailable
+        ? "Задачи сохраняются в этом браузере. Статистика учитывает все задачи."
+        : "Сохранение недоступно: изменения действуют до закрытия страницы. Статистика учитывает все задачи.";
+    }
+
+    function save() {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(tasks));
+        storageAvailable = true;
+      } catch {
+        storageAvailable = false;
+      }
+      updateStorageNote();
+    }
+
+    function renderStats() {
+      const total = tasks.reduce((sum, task) => sum + task.hours, 0);
+      const completed = tasks.filter(task => task.done);
+      const doneHours = completed.reduce((sum, task) => sum + task.hours, 0);
+      const percentage = total > 0
+  	? Math.round(doneHours / total * 100)
+  	: 0;
+
+      $("totalHours").textContent = format(total) + " ч";
+      $("doneHours").textContent = format(doneHours) + " ч";
+      $("percent").textContent = percentage + "%";
+      $("progress").value = percentage;
+      $("progressText").textContent =
+        `Выполнено задач: ${completed.length} из ${tasks.length} · Осталось: ${format(total - doneHours)} ч`;
+    }
+
+    function renderList() {
+      const list = $("taskList");
+      list.replaceChildren();
+
+      const visible = tasks.filter(task =>
+        filter === "all" || (filter === "done" ? task.done : !task.done)
+      );
+
+      for (const task of visible) {
+        const item = document.createElement("li");
+        item.className = "task" + (task.done ? " done" : "");
+
+        const label = document.createElement("label");
+        label.className = "task-label";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = task.done;
+        checkbox.setAttribute("aria-label", "Готово: " + task.title);
+
+        const info = document.createElement("span");
+        info.className = "task-info";
+        const title = document.createElement("span");
+        title.className = "task-title";
+        title.textContent = task.title;
+        const meta = document.createElement("span");
+        meta.className = "task-meta";
+        const updateMeta = () => {
+          meta.textContent = `${format(task.hours)} ч · ${task.done ? "Готово" : "Активно"}`;
+        };
+        updateMeta();
+
+        checkbox.addEventListener("change", () => {
+          task.done = checkbox.checked;
+          save();
+          renderStats();
+          $("announcement").textContent =
+            `${task.title}: ${task.done ? "готово" : "активно"}.`;
+          if (filter === "all") {
+            item.classList.toggle("done", task.done);
+            updateMeta();
+          } else {
+            renderList();
+            focusAfterRemoval();
+          }
+        });
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "delete";
+        remove.textContent = "Удалить";
+        remove.setAttribute("aria-label", "Удалить задачу: " + task.title);
+        remove.addEventListener("click", () => {
+          tasks = tasks.filter(entry => entry.id !== task.id);
+          save();
+          renderStats();
+          renderList();
+          focusAfterRemoval();
+          $("announcement").textContent = `Задача «${task.title}» удалена.`;
+        });
+
+        info.append(title, meta);
+        label.append(checkbox, info);
+        item.append(label, remove);
+        list.append(item);
+      }
+
+      $("empty").hidden = visible.length > 0;
+      $("empty").textContent = filter === "done"
+        ? "Готовых задач пока нет."
+        : filter === "active"
+          ? "Активных задач нет. Можно отдохнуть!"
+          : "Пока нет задач. Добавьте первую выше.";
+    }
+
+    function focusAfterRemoval() {
+      const target = $("taskList").querySelector('input[type="checkbox"]')
+        || document.querySelector('.filters [aria-pressed="true"]');
+      target.focus();
+    }
+
+    function setFilter(value) {
+      filter = value;
+      document.querySelectorAll("[data-filter]").forEach(button => {
+        button.setAttribute("aria-pressed", String(button.dataset.filter === filter));
+      });
+      renderList();
+    }
+
+    $("title").addEventListener("input", () => $("title").setCustomValidity(""));
+
+    $("taskForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const title = $("title").value.trim();
+      const hours = $("hours").valueAsNumber;
+
+      if (!title) {
+        $("title").setCustomValidity("Введите название задачи.");
+        $("title").reportValidity();
+        return;
+      }
+      if (!Number.isFinite(hours) || hours < 0.1 || hours > 10000) return;
+
+      let id;
+      do {
+        id = Date.now().toString(36) + Math.random().toString(36).slice(2);
+      } while (tasks.some(task => task.id === id));
+
+      tasks.push({ id, title, hours, done: false });
+      save();
+      renderStats();
+      setFilter(filter === "done" ? "active" : filter);
+      $("taskForm").reset();
+      $("title").focus();
+      $("announcement").textContent = `Добавлена задача «${title}».`;
+    });
+
+    document.querySelectorAll("[data-filter]").forEach(button => {
+      button.addEventListener("click", () => setFilter(button.dataset.filter));
+    });
+
+    updateStorageNote();
+    renderStats();
+    renderList();
+  </script>
+</body>
+</html>
